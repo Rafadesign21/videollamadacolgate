@@ -1,24 +1,41 @@
 <!DOCTYPE html>
 <html>
-<head><title>Host</title></head>
+<head>
+    <meta charset="UTF-8">
+    <title>Host</title>
+</head>
 <body>
-  <h1>Host</h1>
-  <video id="localVideo" autoplay muted playsinline style="width: 50%;"></video><br>
-  <button onclick="startCall()">Iniciar llamada</button>
-  <button onclick="showVideo()">Mostrar video</button>
-  <button onclick="backToCall()">Volver a cámara</button>
+    <h1>Host</h1>
+    <video id="localVideo" autoplay muted playsinline></video>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const video = document.getElementById('localVideo');
+        const peerConnection = new RTCPeerConnection();
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
-    const video = document.getElementById("localVideo");
-    async function startCall() {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      video.srcObject = stream;
-      socket.emit("start-call");
-    }
-    function showVideo() { socket.emit("show-video"); }
-    function backToCall() { socket.emit("back-to-call"); }
-  </script>
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
+            video.srcObject = stream;
+            stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+            return peerConnection.createOffer();
+        }).then(offer => {
+            return peerConnection.setLocalDescription(offer);
+        }).then(() => {
+            socket.emit("oferta", peerConnection.localDescription);
+        });
+
+        socket.on("respuesta", answer => {
+            peerConnection.setRemoteDescription(answer);
+        });
+
+        peerConnection.onicecandidate = event => {
+            if (event.candidate) {
+                socket.emit("ice-candidate", event.candidate);
+            }
+        };
+
+        socket.on("ice-candidate", candidate => {
+            peerConnection.addIceCandidate(candidate);
+        });
+    </script>
 </body>
 </html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head><title>Invitado</title></head>
+<body style="margin:0; overflow:hidden;">
+  <video id="remoteVideo" autoplay playsinline style="width:100vw; height:100vh;"></video>
+  <video id="videoFile" style="display:none; width:100vw; height:100vh;" autoplay loop muted>
+    <source src="video.mp4" type="video/mp4">
+  </video>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const remoteVideo = document.getElementById("remoteVideo");
+    const videoFile = document.getElementById("videoFile");
+
+    socket.on("show-video", () => {
+      remoteVideo.style.display = "none";
+      videoFile.style.display = "block";
+      videoFile.play();
+    });
+
+    socket.on("back-to-call", () => {
+      videoFile.pause();
+      videoFile.style.display = "none";
+      remoteVideo.style.display = "block";
+    });
+  </script>
+</body>
+</html>

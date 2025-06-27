@@ -1,41 +1,24 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Host</title>
+  <meta charset="UTF-8">
+  <title>Host</title>
 </head>
 <body>
-    <h1>Host</h1>
-    <video id="localVideo" autoplay muted playsinline></video>
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-        const video = document.getElementById('localVideo');
-        const peerConnection = new RTCPeerConnection();
+  <h1>Host</h1>
+  <button onclick="startCall()">Iniciar videollamada</button>
+  <button onclick="playVideo()">Reproducir video</button>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
 
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
-            video.srcObject = stream;
-            stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
-            return peerConnection.createOffer();
-        }).then(offer => {
-            return peerConnection.setLocalDescription(offer);
-        }).then(() => {
-            socket.emit("oferta", peerConnection.localDescription);
-        });
+    function startCall() {
+      socket.emit("startCall");
+    }
 
-        socket.on("respuesta", answer => {
-            peerConnection.setRemoteDescription(answer);
-        });
-
-        peerConnection.onicecandidate = event => {
-            if (event.candidate) {
-                socket.emit("ice-candidate", event.candidate);
-            }
-        };
-
-        socket.on("ice-candidate", candidate => {
-            peerConnection.addIceCandidate(candidate);
-        });
-    </script>
+    function playVideo() {
+      socket.emit("playVideo");
+    }
+  </script>
 </body>
 </html>

@@ -1,39 +1,13 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Guest</title>
+  <meta charset="UTF-8" />
+  <title>Invitado</title>
 </head>
 <body>
-    <h1>Guest</h1>
-    <video id="remoteVideo" autoplay playsinline></video>
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-        const video = document.getElementById('remoteVideo');
-        const peerConnection = new RTCPeerConnection();
-
-        peerConnection.ontrack = (event) => {
-            video.srcObject = event.streams[0];
-        };
-
-        socket.on("oferta", async offer => {
-            await peerConnection.setRemoteDescription(offer);
-            const answer = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(answer);
-            socket.emit("respuesta", peerConnection.localDescription);
-        });
-
-        peerConnection.onicecandidate = event => {
-            if (event.candidate) {
-                socket.emit("ice-candidate", event.candidate);
-            }
-        };
-
-        socket.on("ice-candidate", candidate => {
-            peerConnection.addIceCandidate(candidate);
-        });
-    </script>
+  <h1>Invitado conectado</h1>
+  <video id="remoteVideo" autoplay></video>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="guest.js"></script>
 </body>
 </html>
-

@@ -1,28 +1,61 @@
 <!DOCTYPE html>
-<html>
-<head><title>Invitado</title></head>
-<body style="margin:0; overflow:hidden;">
-  <video id="remoteVideo" autoplay playsinline style="width:100vw; height:100vh;"></video>
-  <video id="videoFile" style="display:none; width:100vw; height:100vh;" autoplay loop muted>
-    <source src="video.mp4" type="video/mp4">
-  </video>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Invitado</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: black;
+    }
+    video {
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      background-color: black;
+    }
+  </style>
+</head>
+<body>
+  <video id="remoteVideo" autoplay playsinline></video>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
-    const remoteVideo = document.getElementById("remoteVideo");
-    const videoFile = document.getElementById("videoFile");
+    const remoteVideo = document.getElementById('remoteVideo');
 
-    socket.on("show-video", () => {
-      remoteVideo.style.display = "none";
-      videoFile.style.display = "block";
-      videoFile.play();
+    const peerConnection = new RTCPeerConnection({
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
     });
 
-    socket.on("back-to-call", () => {
-      videoFile.pause();
-      videoFile.style.display = "none";
-      remoteVideo.style.display = "block";
+    peerConnection.ontrack = (event) => {
+      remoteVideo.srcObject = event.streams[0];
+    };
+
+    peerConnection.onicecandidate = (event) => {
+      if (event.candidate) {
+        socket.emit('candidate', event.candidate);
+      }
+    };
+
+    socket.on('offer', async (offer) => {
+      try {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+        socket.emit('answer', answer);
+      } catch (error) {
+        console.error('Error al manejar la oferta:', error);
+      }
+    });
+
+    socket.on('candidate', async (candidate) => {
+      try {
+        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch (e) {
+        console.error('Error al agregar ICE candidate', e);
+      }
     });
   </script>
 </body>

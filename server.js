@@ -1,44 +1,41 @@
-const express = require("express");
+const express = require('express');
 const app = express();
-const http = require("http").createServer(app);
-const io = require("socket.io")(http);
-const path = require("path");
+const http = require('http').createServer(app);
+const io = require('socket.io')(http);
 
-// CORREGIR CSP:
-app.use((req, res, next) => {
-  res.setHeader(
-    "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-inline'; connect-src *; img-src 'self' data:; style-src 'self' 'unsafe-inline';"
-  );
-  next();
-});
+const port = process.env.PORT || 3000;
 
-// Servir archivos estáticos
-app.use(express.static(__dirname));
+// Servir archivos estáticos (host.html y guest.html deben estar en la raíz o carpeta "public")
+app.use(express.static(__dirname + '/public'));
 
-// WebSocket
-io.on("connection", (socket) => {
-  console.log("🔌 Usuario conectado");
+// Rutas opcionales si los archivos están fuera de /public
+// app.get('/', (req, res) => res.sendFile(__dirname + '/host.html'));
+// app.get('/guest.html', (req, res) => res.sendFile(__dirname + '/guest.html'));
 
-  socket.on("oferta", (description) => {
-    socket.broadcast.emit("oferta", description);
+io.on('connection', (socket) => {
+  console.log('🔌 Nuevo cliente conectado:', socket.id);
+
+  socket.on('offer', (data) => {
+    console.log('📡 Oferta recibida');
+    socket.broadcast.emit('offer', data);
   });
 
-  socket.on("respuesta", (description) => {
-    socket.broadcast.emit("respuesta", description);
+  socket.on('answer', (data) => {
+    console.log('✅ Respuesta recibida');
+    socket.broadcast.emit('answer', data);
   });
 
-  socket.on("ice-candidate", (candidate) => {
-    socket.broadcast.emit("ice-candidate", candidate);
+  socket.on('ice-candidate', (data) => {
+    console.log('🧊 ICE Candidate');
+    socket.broadcast.emit('ice-candidate', data);
   });
 
-  socket.on("disconnect", () => {
-    console.log("❌ Usuario desconectado");
+  socket.on('disconnect', () => {
+    console.log('❌ Cliente desconectado:', socket.id);
   });
 });
 
-// Iniciar servidor
-const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+http.listen(port, () => {
+  console.log(`🚀 Servidor corriendo en http://localhost:${port}`);
 });
+
